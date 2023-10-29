@@ -1,0 +1,50 @@
+[build-system]
+# AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
+requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+# For smarter version schemes and other configuration options,
+# check out https://github.com/pypa/setuptools_scm
+version_scheme = "no-guess-dev"
+
+[tool.black]
+include = '\.pyi?$'
+line-length = 120
+target-version = ['py38', 'py39', 'py310']
+
+[tool.isort]
+known_first_party = "cvar_sensing"
+profile = "black"
+src_paths = ["src"]
+
+[tool.pylint]
+disable = "R,C"
+generated-members = "tensorflow.*,torch.*"
+ignored-modules = "tensorflow.compat,tensorflow.keras,tensorflow.python.ops,scipy.special"
+
+[tool.ruff]
+line-length = 120
+select = [
+  "E",
+  "F",
+  "W",
+  "Q",
+  "UP",
+  "I",
+  "N",
+  "T201",
+  "T203",
+]
+
+[tool.pyright]
+exclude = [
+  "**/node_modules",
+  "**/__pycache__",
+  ".venv",
+  "venv"
+]
+ignore = []
+include = ["src"]
+reportMissingImports = true
+reportMissingTypeStubs = false
