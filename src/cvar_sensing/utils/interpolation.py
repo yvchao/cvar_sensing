@@ -2,6 +2,15 @@ import torch
 from torch import Tensor
 
 
+def step_interp1d(eval_t, t, y):
+    idx = torch.searchsorted(t, eval_t, side="right")
+    idx = torch.clip(idx - 1, min=0)
+    return y[idx]
+
+
+step_interp = torch.vmap(step_interp1d, in_dims=(None, 0, 0))
+
+
 # from here
 # https://github.com/pytorch/pytorch/issues/50334#issuecomment-1000917964
 def interp_1d(x: Tensor, xp: Tensor, fp: Tensor) -> Tensor:

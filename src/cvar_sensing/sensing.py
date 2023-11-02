@@ -29,15 +29,6 @@ def d_js(p, q):
     return d
 
 
-def step_interp1d(eval_t, t, y):
-    idx = torch.searchsorted(t, eval_t, side="right")
-    idx = torch.clip(idx - 1, min=0)
-    return y[idx]
-
-
-step_interp = torch.vmap(step_interp1d, in_dims=(None, 0, 0))
-
-
 sim_config = {
     "min_dt": 0.1,
     "max_dt": 0.5,
@@ -248,16 +239,6 @@ class Sensing(torch.nn.Module):
         }
 
         return ret
-
-    # def step_interp(self, t, y, eval_t):
-    #     ys = []
-    #     for i in range(len(y)):
-    #         idx = torch.searchsorted(t[i], eval_t, side="right") - 1
-    #         idx = torch.clip(idx, min=0)
-    #         yi = y[i, idx]
-    #         ys.append(yi)
-    #     pred_y = torch.stack(ys)
-    #     return pred_y
 
     @torch.compile
     def calculate_r_y(self, obs_t, pred_y, eval_t, eval_y):
