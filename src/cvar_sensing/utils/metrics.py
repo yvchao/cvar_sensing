@@ -3,8 +3,8 @@ import scipy.stats
 import torch
 from sklearn import metrics
 
-from ..sensing import step_interp
 from ..train import batch_call
+from .interpolation import step_interp
 
 
 def mean_confidence_interval(data, confidence=0.95):

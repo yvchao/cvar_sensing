@@ -9,9 +9,9 @@ from model_config import net_config, sim_config
 from tqdm import auto
 
 from cvar_sensing.dataset import split_data
-from cvar_sensing.sensing import Sensing, step_interp
+from cvar_sensing.sensing import Sensing
 from cvar_sensing.train import dict_to_device, load_model, ndarray_to_tensor
-from cvar_sensing.utils import evaluate, get_auc_scores
+from cvar_sensing.utils import evaluate, get_auc_scores, step_interp
 
 # initialize device
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
