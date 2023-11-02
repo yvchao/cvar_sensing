@@ -4,10 +4,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from data_util import load_synthetic_data, split_data
+from data_util import load_synthetic_data
 from model_config import net_config, sim_config
 from tqdm import auto
 
+from cvar_sensing.dataset import split_data
 from cvar_sensing.sensing import Sensing, step_interp
 from cvar_sensing.train import dict_to_device, load_model, ndarray_to_tensor
 from cvar_sensing.utils import evaluate, get_auc_scores
