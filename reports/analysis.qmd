@@ -310,7 +310,7 @@ Here, we illustrate the sensing performance of different policies on the synthet
 ```{python}
 # | echo: false
 # | label: fig-pareto-front
-# | fig-cap: "Pareto front of different sensing policies"
+# | fig-cap: "Pareto front of different sensing policies."
 
 grouped = metrics.groupby(["method", "params"])
 df = pd.DataFrame(columns=metrics.columns)
@@ -389,7 +389,7 @@ Similarly, without adaptive scheduling of acquisition intervals and risk-averse 
 # | echo: false
 # | warning: false
 # | label: fig-sensing-deficiency
-# | fig-cap: "Distributions of sensing deficiency"
+# | fig-cap: "Distributions of sensing deficiency."
 
 # load the empirical evaluation of sensing deficiency values.
 q_vals = np.load("../experiments/exp-synthetic/q_pi.npz")
@@ -475,6 +475,5 @@ ax.set_xlabel(r"$Q^\pi(\mathbf{X})$")
 ax.set_ylabel("# of samples")
 ax.grid("on", zorder=0)
 
-plt.show()
 fig.tight_layout()  # noqa
 ```
