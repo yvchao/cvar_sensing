@@ -2,4 +2,4 @@ project:
   output-dir: "output"
 
 format:
-  html: default
+  gfm: default
