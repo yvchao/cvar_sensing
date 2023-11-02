@@ -1,0 +1,480 @@
+---
+title: "Analyses of the experimental results"
+jupyter: python3
+---
+
+
+```{python}
+# | echo: false
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from IPython.display import display
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
+from scipy.stats import ttest_ind_from_stats
+
+from cvar_sensing.utils import mean_confidence_interval
+
+exp_synthetic_dir = Path("../experiments/exp-synthetic")
+# load results
+nll_metrics = pd.read_csv(exp_synthetic_dir / "nll_evaluation.csv", index_col=0)
+baseline_metrics = pd.read_csv(exp_synthetic_dir / "baseline_evaluation.csv", index_col=0)
+fo_metrics = pd.read_csv(exp_synthetic_dir / "fo_evaluation.csv", index_col=0)
+asac_metrics = pd.read_csv(exp_synthetic_dir / "asac_evaluation.csv", index_col=0)
+ras_metrics = pd.read_csv(exp_synthetic_dir / "ras_evaluation.csv", index_col=0)
+
+baseline_metrics["method"] = "AS"
+baseline_metrics["params"] = baseline_metrics["delta"].apply(lambda x: f"Δ={x}")
+
+nll_metrics["method"] = "NLL"
+nll_metrics["params"] = nll_metrics["lambda"].apply(lambda x: f"λ={x}")
+
+asac_metrics["method"] = "ASAC"
+asac_metrics["params"] = asac_metrics["lambda"].apply(lambda x: f"μ={x}")
+
+
+ras_metrics["method"] = "RAS"
+ras_metrics["params"] = ras_metrics["lambda"].apply(lambda x: f"λ={x}")
+
+fo_metrics["method"] = "FO"
+fo_metrics["params"] = ""
+
+metrics = pd.concat([fo_metrics, baseline_metrics, nll_metrics, asac_metrics, ras_metrics])
+scores = ["roc", "prc", "cost", "delay(p>=0.3)", "delay(p>=0.5)", "delay(p>=0.7)"]
+```
+
+## Benchmark results
+
+### Synthetic dataset
+
+For each method, we select the hyperparameter based on their *cost efficiency*, i.e., the achieved accuracy (PRC) per unit acquisition cost.
+We ignore the sensing policies that made no observation (cost = 0).
+The benchmark result of RAS agains baselines are shown as follows.
+
+```{python}
+# | echo: fenced
+# | code-fold: true
+# | code-summary: Benchmark evaluation on the synthetic dataset.
+# | code-overflow: wrap
+grouped = metrics.groupby(["method", "params"])
+df = pd.DataFrame(columns=metrics.columns)
+for i, (m, g) in enumerate(grouped):
+    stats = g[scores].apply(mean_confidence_interval)
+    stats = stats.iloc[:2].apply(lambda x: f"{x.iloc[0]:.3f}±{x.iloc[1]:.3f}", axis=0)
+    df.loc[i] = stats
+    df.loc[i, ["method", "params"]] = m
+
+report = []
+report.append(df[df["method"] == "FO"])
+for m, g in df.groupby("method"):
+    if m == "FO":
+        continue
+
+    # For each method, we select the most "cost-efficient" model for the benchmark.
+    # Thus, we consider the accuracy (PRC) per unit acquisition cost.
+    prc = g["prc"].apply(lambda s: float(s.split("±")[0]))
+    cost = g["cost"].apply(lambda s: float(s.split("±")[0]))
+    w = prc / (cost * (cost > 0) + 1e10 * (cost == 0))
+    idx = w.argmax()
+    report.append(g.iloc[[idx]])
+report = pd.concat(report)
+
+result = report[["method", "params"] + scores].rename(
+    columns={
+        "method": "Method",
+        "params": "Params",
+        "roc": "ROC",
+        "prc": "PRC",
+        "cost": "Cost",
+        "delay(p>=0.3)": "d_{δ=0.3}",
+        "delay(p>=0.5)": "d_{δ=0.5}",
+        "delay(p>=0.7)": "d_{δ=0.7}",
+    }
+)
+display(result)
+```
+
+In the following table, we mark the location of the best performance in each column and evalute the $p$-values by performance t-test against the rest methods.
+```{python}
+# | echo: false
+def text_to_mean(val):
+    val = val.split("±")
+    mean = float(val[0])
+    return mean
+
+
+def text_to_std(val):
+    val = val.split("±")
+    std = float(val[1]) / 1.96
+    return std
+
+
+def get_p_value(val, val2, n):
+    mean1 = text_to_mean(val)
+    std1 = text_to_std(val)
+    mean2 = text_to_mean(val2)
+    std2 = text_to_std(val2)
+    _, p_value = ttest_ind_from_stats(mean1, std1, n, mean2, std2, n)
+    return p_value
+
+
+def find_best_method(results, metrics):
+    # test if the best row is statistically best one
+    p_values = pd.DataFrame()
+    p_values["method"] = results["method"]
+    for m in metrics:
+        means = results[m].apply(text_to_mean)
+        if m in ["roc", "prc"]:
+            best_row = results.index[means.argmax()]
+        else:
+            best_row = results.index[means.argmin()]
+
+        best_val = results.loc[best_row, m]
+        best_n = int(results.loc[best_row, "n"])
+
+        for i in results.index:
+            val = results.loc[i, m]
+            mean1 = text_to_mean(val)
+            std1 = text_to_std(val)
+            n1 = int(results.loc[i, "n"])
+            mean2 = text_to_mean(best_val)
+            std2 = text_to_std(best_val)
+            _, p_value = ttest_ind_from_stats(mean1, std1, n1, mean2, std2, best_n)
+            p_values.loc[i, m] = p_value
+        p_values.loc[best_row, m] = "best"
+    return p_values
+```
+
+
+```{python}
+# | echo: false
+report["n"] = 5  # each model is trained with 5 different random seeds on the synthetic dataset.
+ttest = find_best_method(report, scores).rename(
+    columns={
+        "method": "Method",
+        "params": "Params",
+        "roc": "ROC",
+        "prc": "PRC",
+        "cost": "Cost",
+        "delay(p>=0.3)": "d_{δ=0.3}",
+        "delay(p>=0.5)": "d_{δ=0.5}",
+        "delay(p>=0.7)": "d_{δ=0.7}",
+    }
+)
+display(ttest)
+```
+
+Below, we propose one optional criterion to find the best method by considering both acquisition cost and diagnositic accuracy.
+We consider the FO baseline with dense sensing histories as a reference, and find the optimal sensing history that achieves the largest acquisition cost reduction while maintaining a reasonable accuracy. Our criterion is defiend as follows for each method (except for the FO baseline).
+$$
+\frac{\max (0, \mathrm{PRC}_{\mathrm{FO}} - \mathrm{PRC})}{\mathrm{Cost}_{\mathrm{FO}} - \mathrm{Cost}},
+$$
+where a small value indicates more effective active sensing strategy (small loss in accuracy but high reduction in acquisition cost).
+
+```{python}
+# | echo: fenced
+# | code-fold: true
+# | code-summary: Find the overally best method.
+# | code-overflow: wrap
+perf_fo = report[report["method"]=="FO"]
+rest = report[report["method"]!="FO"]
+PRC_FO, COST_FO = perf_fo["prc"].item(), perf_fo["cost"].item()
+PRC_FO = float(PRC_FO.split("±")[0])
+COST_FO = float(COST_FO.split("±")[0])
+
+prc = rest["prc"].apply(lambda s: float(s.split("±")[0]))
+cost = rest["cost"].apply(lambda s: float(s.split("±")[0]))
+w = (PRC_FO - prc).clip(0)/(COST_FO - cost)
+idx = w.argmin()
+best_method = rest.iloc[idx]["method"]
+best_params = rest.iloc[idx]["params"]
+print(f"Based on the above criterion, the best method is {best_method} ({best_params})") # noqa
+```
+
+
+### ADNI dataset
+We perform similar analysis on the ADNI dataset.
+The benchmark results are given below.
+```{python}
+# | echo: false
+exp_adni_dir = Path("../experiments/exp-adni")
+# load results
+nll_metrics = pd.read_csv(exp_adni_dir / "nll_evaluation.csv", index_col=0)
+baseline_metrics = pd.read_csv(exp_adni_dir / "baseline_evaluation.csv", index_col=0)
+fo_metrics = pd.read_csv(exp_adni_dir / "fo_evaluation.csv", index_col=0)
+asac_metrics = pd.read_csv(exp_adni_dir / "asac_evaluation.csv", index_col=0)
+ras_metrics = pd.read_csv(exp_adni_dir / "ras_evaluation.csv", index_col=0)
+
+baseline_metrics["method"] = "AS"
+baseline_metrics["params"] = baseline_metrics["delta"].apply(lambda x: f"Δ={x}")
+
+nll_metrics["method"] = "NLL"
+nll_metrics["params"] = nll_metrics["lambda"].apply(lambda x: f"λ={x}")
+
+asac_metrics["method"] = "ASAC"
+asac_metrics["params"] = asac_metrics["lambda"].apply(lambda x: f"μ={x}")
+
+
+ras_metrics["method"] = "RAS"
+ras_metrics["params"] = ras_metrics["lambda"].apply(lambda x: f"λ={x}")
+
+fo_metrics["method"] = "FO"
+fo_metrics["params"] = ""
+
+adni_metrics = pd.concat([fo_metrics, baseline_metrics, nll_metrics, asac_metrics, ras_metrics])
+scores = ["roc", "prc", "cost", "delay(p>=0.1)", "delay(p>=0.3)", "delay(p>=0.5)"]
+
+grouped = adni_metrics.groupby(["method", "params"])
+df = pd.DataFrame(columns=adni_metrics.columns)
+for i, (m, g) in enumerate(grouped):
+    stats = g[scores].apply(mean_confidence_interval)
+    stats = stats.iloc[:2].apply(lambda x: f"{x.iloc[0]:.3f}±{x.iloc[1]:.3f}", axis=0)
+    df.loc[i] = stats
+    df.loc[i, ["method", "params"]] = m
+
+report = []
+report.append(df[df["method"] == "FO"])
+for m, g in df.groupby("method"):
+    if m == "FO":
+        continue
+
+    # For each method, we select the most "cost-efficient" model for the benchmark.
+    # Thus, we consider the accuracy (PRC) per unit acquisition cost.
+    prc = g["prc"].apply(lambda s: float(s.split("±")[0]))
+    cost = g["cost"].apply(lambda s: float(s.split("±")[0]))
+    w = prc / (cost * (cost > 0) + 1e10 * (cost == 0))
+    idx = w.argmax()
+    report.append(g.iloc[[idx]])
+report = pd.concat(report)
+
+result = report[["method", "params"] + scores].rename(
+    columns={
+        "method": "Method",
+        "params": "Params",
+        "roc": "ROC",
+        "prc": "PRC",
+        "cost": "Cost",
+        "delay(p>=0.1)": "d_{δ=0.1}",
+        "delay(p>=0.3)": "d_{δ=0.3}",
+        "delay(p>=0.5)": "d_{δ=0.5}",
+        "delay(p>=0.7)": "d_{δ=0.7}",
+    }
+)
+display(result)
+```
+The best performance in each column and the overall best method is reported as follows.
+```{python}
+# | echo: false
+report["n"] = 3  # each model is trained with 3 different random seeds on the adni dataset.
+ttest = find_best_method(report, scores).rename(
+    columns={
+        "method": "Method",
+        "params": "Params",
+        "roc": "ROC",
+        "prc": "PRC",
+        "cost": "Cost",
+        "delay(p>=0.3)": "d_{δ=0.3}",
+        "delay(p>=0.5)": "d_{δ=0.5}",
+        "delay(p>=0.7)": "d_{δ=0.7}",
+    }
+)
+display(ttest)
+
+perf_fo = report[report["method"]=="FO"]
+rest = report[report["method"]!="FO"]
+PRC_FO, COST_FO = perf_fo["prc"].item(), perf_fo["cost"].item()
+PRC_FO = float(PRC_FO.split("±")[0])
+COST_FO = float(COST_FO.split("±")[0])
+
+prc = rest["prc"].apply(lambda s: float(s.split("±")[0]))
+cost = rest["cost"].apply(lambda s: float(s.split("±")[0]))
+w = (PRC_FO - prc).clip(0)/(COST_FO - cost)
+idx = w.argmin()
+best_method = rest.iloc[idx]["method"]
+best_params = rest.iloc[idx]["params"]
+print(f"Based on our proposed criterion, the best method is {best_method} ({best_params})") # noqa
+```
+
+Our method achieves a desirable balance between diagnosis accuracy and acquisition cost and is evaluated to be the best sensing policy.
+
+
+## Discussion
+
+### Trade-off between timeliness and acquisition costs.
+The selection of model parameters could be difficult when two or more criteria are involved in the evaluation.
+Here, we illustrate the sensing performance of different policies on the synthetic dataset and highlight the ones in the Pareto front with gray circles in @fig-pareto-front.
+
+```{python}
+# | echo: false
+# | label: fig-pareto-front
+# | fig-cap: "Pareto front of different sensing policies"
+
+grouped = metrics.groupby(["method", "params"])
+df = pd.DataFrame(columns=metrics.columns)
+for i, (m, g) in enumerate(grouped):
+    stats = g[scores].apply(mean_confidence_interval)
+    mean = stats.iloc[:2].apply(lambda x: x.iloc[0], axis=0)
+    df.loc[i] = mean
+    df.loc[i, ["method", "params"]] = m
+
+
+# Faster than is_pareto_efficient_simple, but less readable.
+# Source: https://stackoverflow.com/a/40239615
+def is_pareto_efficient(costs, return_mask=True):
+    """
+    Find the pareto-efficient points
+    :param costs: An (n_points, n_costs) array
+    :param return_mask: True to return a mask
+    :return: An array of indices of pareto-efficient points.
+        If return_mask is True, this will be an (n_points, ) boolean array
+        Otherwise it will be a (n_efficient_points, ) integer array of indices.
+    """
+    is_efficient = np.arange(costs.shape[0])
+    n_points = costs.shape[0]
+    next_point_index = 0  # Next index in the is_efficient array to search for
+    while next_point_index < len(costs):
+        nondominated_point_mask = np.any(costs < costs[next_point_index], axis=1)
+        nondominated_point_mask[next_point_index] = True
+        is_efficient = is_efficient[nondominated_point_mask]  # Remove dominated points
+        costs = costs[nondominated_point_mask]
+        next_point_index = np.sum(nondominated_point_mask[:next_point_index]) + 1
+    if return_mask:
+        is_efficient_mask = np.zeros(n_points, dtype=bool)
+        is_efficient_mask[is_efficient] = True
+        return is_efficient_mask
+    else:
+        return is_efficient
+
+
+fig, ax = plt.subplots(figsize=(6, 5))
+sns.scatterplot(data=df, x="delay(p>=0.5)", y="cost", hue="method", palette="Set1", s=40, ax=ax)
+
+pts = df[["cost", "delay(p>=0.5)"]].values
+front = df[is_pareto_efficient(pts)]
+for idx in front.index:
+    delay = front.loc[idx, "delay(p>=0.5)"]
+    cost = front.loc[idx, "cost"]
+    params = front.loc[idx, "params"]
+    ax.scatter(delay, cost, marker="o", fc="none", ec="grey", s=90)
+    if params == r"$\lambda=400.0$":
+        ax.text(delay, cost + 0.4, params, color="grey", ha="center", va="bottom", alpha=1.0)
+    else:
+        ax.text(delay, cost - 0.4, params, color="grey", ha="center", va="top", alpha=1.0)
+
+
+ax.set_xlim([0, 1.5])
+ax.set_ylim([-1, 40])
+ax.set_yscale("symlog", linthresh=10)
+ax.get_legend().set_title("Method")
+ax.set_xlabel(r"$d_{\delta=0.5}$")
+ax.set_ylabel("Cost")
+fig.tight_layout()
+```
+
+These policies are considered Pareto optimal since their timeliness ($d_{δ=0.5}$) and average acquisition cost cannot be simultaneously improved by swapping parameters with other policies.
+Benefitted from the risk-averse training strategy, most sensing policies obtained via RAS are centered around the knee point of the Pareto front, which helps to explain the outstanding cost efficiency of RAS as reported above.
+
+### Improvement of the sensing deficiency distribution
+To illustrate the effectiveness of our risk-averse active sensing approach, we compare the empirical distribution of sensing deficiency $Q^π(X)$ of RAS with the ablations of risk-neutral sensing ($α = 1.0$) and AS baseline ($α = 1.0$, constant acquisition interval $∆ = 1.0$) on the synthetic dataset.
+All three models are trained with the same trade-off coefficient $λ = 300$.
+As illustrated in @fig-sensing-deficiency, RAS is able to effectively optimize the sensing performance for trajectories in the long tail of sensing deficency distribution and reduces the upper $α$-quantile of $Q^π(X)$ to $ρ_{α=0.1} = 10.40$.
+Factor α = 1.0 completely disables the risk-aversion training strategy in RAS.
+Thereby, a clear increase of sensing deficiency (quantile $ρ_{α=0.1}$ grows from 10.40 to 20.01) is observed with the risk-neutral ablation of RAS.
+Similarly, without adaptive scheduling of acquisition intervals and risk-averse optimization strategies, the AS baseline illustrates the failure of conventional active sensing paradigms at the long tail of $Q^π(X)$ distribution.
+
+```{python}
+# | echo: false
+# | warning: false
+# | label: fig-sensing-deficiency
+# | fig-cap: "Distributions of sensing deficiency"
+
+# load the empirical evaluation of sensing deficiency values.
+q_vals = np.load("../experiments/exp-synthetic/q_pi.npz")
+q_ras = q_vals["q_ras"]  # RAS (α=0.1)
+q_rns = q_vals["q_rns"]  # RAS (α=1.0)
+q_baseline = q_vals["q_baseline"]  # RAS (α=1.0, Δ=1.0)
+
+min_q = min(q_ras.min(), q_rns.min(), q_baseline.min())
+max_q = max(q_ras.max(), q_rns.max(), q_baseline.max())
+alpha = 0.1
+
+colors = ["blue", "orange", "green"]
+bins = np.arange(min_q - 0.5, max_q + 0.5, 1)
+fig, ax = plt.subplots(figsize=(6, 5))
+axins = inset_axes(ax, width=2.5, height=1.5, loc="center")
+
+ax.hist(
+    q_baseline,
+    bins=bins,
+    alpha=1.0,
+    density=False,
+    color=colors[0],
+    edgecolor="black",
+    linewidth=0.2,
+    label="AS",
+    zorder=3,
+)
+ax.hist(
+    q_rns,
+    bins=bins,
+    alpha=0.8,
+    density=False,
+    color=colors[1],
+    edgecolor="black",
+    linewidth=0.2,
+    label=r"RAS($\alpha=1.0$)",
+    zorder=3,
+)
+ax.hist(
+    q_ras,
+    bins=bins,
+    alpha=0.6,
+    density=False,
+    color=colors[2],
+    edgecolor="black",
+    linewidth=0.2,
+    label=r"RAS($\alpha=0.1$)",
+    zorder=3,
+)
+ax.legend()
+
+bins = np.arange(min_q - 0.5, max_q + 0.5, 1)
+axins.hist(q_baseline, bins=bins, alpha=1.0, density=False, color=colors[0], edgecolor="black", linewidth=0.2)
+axins.hist(q_rns, bins=bins, density=False, color=colors[1], alpha=0.8, edgecolor="black", linewidth=0.2)
+axins.hist(q_ras, bins=bins, density=False, color=colors[2], alpha=0.6, edgecolor="black", linewidth=0.2)
+
+Q_alpha = np.quantile(q_baseline, 1 - alpha)
+axins.vlines(Q_alpha, 0, 80, color=colors[0])
+axins.text(Q_alpha - 0.5, 85, r"$\rho_{\alpha}" + f"={Q_alpha:.2f}" + "$", color=colors[0])
+
+Q_alpha = np.quantile(q_rns, 1 - alpha)
+axins.vlines(Q_alpha, 0, 60, color=colors[1])
+axins.text(Q_alpha - 0.5, 65, r"$\rho_{\alpha}" + f"={Q_alpha:.2f}" + "$", color=colors[1])
+
+Q_alpha = np.quantile(q_ras, 1 - alpha)
+axins.vlines(Q_alpha, 0, 40, color=colors[2])
+axins.text(Q_alpha - 0.5, 45, r"$\rho_{\alpha}" + f"={Q_alpha:.2f}" + "$", color=colors[2])
+
+
+axins.set_xlim(1, 100)
+axins.set_ylim(0, 120)
+# yscale = FuncScale(ax,nonlinear_scale(10))
+# axins.set_yscale(yscale)
+axins.set_xscale("symlog", linthresh=20)
+
+mark_inset(ax, axins, loc1=3, loc2=4, fc="none", ec="0.6")
+
+ax.set_xlim(min_q - 0.1, max_q + 0.1)
+ax.set_ylim(0, 150)
+# ax.set_xscale("symlog",linthresh=30)
+
+ax.set_xlabel(r"$Q^\pi(\mathbf{X})$")
+ax.set_ylabel("# of samples")
+ax.grid("on", zorder=0)
+
+plt.show()
+fig.tight_layout()  # noqa
+```
