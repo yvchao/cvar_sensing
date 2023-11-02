@@ -1,6 +1,5 @@
 ---
 title: "Analyses of the experimental results"
-jupyter: python3
 ---
 
 
