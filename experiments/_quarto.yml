@@ -1,6 +1,0 @@
-project:
-  title: "Experiments"
-  output-dir: "reports"
-
-format:
-  gfm
