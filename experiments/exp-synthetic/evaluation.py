@@ -26,7 +26,7 @@ net_config["x_dim"] = dataset.x_dim
 net_config["y_dim"] = dataset.y_dim
 
 with open(predictor_model_dir / "best_drop_rate", encoding="utf-8") as f:
-    best_droprate = f.read()
+    best_droprate = f.read().strip()
 
 metrics = pd.read_csv(predictor_model_dir / f"drop_rate={best_droprate}.csv", index_col=0)
 best_seed = metrics.roc.argmax()
@@ -94,6 +94,10 @@ def get_fo_model(model_path: Path | str, net_config, sim_config):
 model = get_fo_model(predictor_model_dir / f"Predictor_{predictor_idx}.pt", net_config, sim_config)
 metric = get_performance(test_set, model)
 metric.to_csv("fo_evaluation.csv")
+
+# restore the simulation settting.
+sim_config["min_dt"] = 0.2
+sim_config["max_dt"] = 1.0
 
 ras_model_dir = Path("ras")
 
@@ -193,7 +197,7 @@ def evaluate_asac_test(test_set, seed, lambda_):
 
     delays = {}
     for threshold in [0.3, 0.5, 0.7]:
-        ds = calculate_delay(test_set[:], ret, threshold=threshold, y_element=1)
+        ds = calculate_delay(test_set[:], ret, threshold=threshold, label_index=1)
         delays[f"delay(p>={threshold})"] = np.nanmean(np.abs(ds)).item()
 
     return roc, prc, cost, delays
