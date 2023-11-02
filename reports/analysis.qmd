@@ -173,7 +173,7 @@ Below, we propose one optional criterion to find the best method by considering 
 We consider the FO baseline with dense sensing histories as a reference, and find the optimal sensing history that achieves the largest acquisition cost reduction while maintaining a reasonable accuracy. Our criterion is defiend as follows for each method (except for the FO baseline).
 
 $$
-\frac{\max (0, \mathrm{PRC}_{\mathrm{FO}} - \mathrm{PRC})}{\mathrm{Cost}_{\mathrm{FO}} - \mathrm{Cost}},
+\frac{\max (0, PRC_{FO} - PRC)}{Cost_{FO} - Cost},
 $$
 
 where a small value indicates more effective active sensing strategy (small loss in accuracy but high reduction in acquisition cost).

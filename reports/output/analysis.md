@@ -88,7 +88,7 @@ reduction while maintaining a reasonable accuracy. Our criterion is
 defiend as follows for each method (except for the FO baseline).
 
 $$
-\frac{\max (0, \text{PRC}_{\text{FO}} - \text{PRC})}{\text{Cost}_{\text{FO}} - \text{Cost}},
+\frac{\max (0, PRC_{FO} - PRC)}{Cost_{FO} - Cost},
 $$
 
 where a small value indicates more effective active sensing strategy
