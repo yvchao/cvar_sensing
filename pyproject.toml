@@ -14,7 +14,7 @@ line-length = 120
 target-version = ['py38', 'py39', 'py310']
 
 [tool.isort]
-known_first_party = "cvar_sensing"
+known_first_party = ["cvar_sensing"]
 profile = "black"
 src_paths = ["src"]
 
@@ -36,6 +36,9 @@ select = [
   "T201",
   "T203",
 ]
+src = ["src"]
+isort = { known-first-party = ["cvar_sensing"] }
+exclude = ["experiments/exp-synthetic/asac", "experiments/exp-adni/asac"]
 
 [tool.pyright]
 exclude = [

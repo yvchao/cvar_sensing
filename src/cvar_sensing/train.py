@@ -1,65 +1,12 @@
-import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.optim as optim
-from IPython.display import display
 from sklearn import metrics
 from tqdm import auto
 
 from .meters import AggregateMeters
-
-
-def env_info():
-    env = "python"
-    if "ipykernel" in sys.modules:
-        env = "notebook"
-    elif "IPython" in sys.modules:
-        env = "ipython"
-    else:
-        env = "python"
-    return env
-
-
-def create_io_handler():
-    # detect execution environment
-    current_env = env_info()
-    if current_env in ["notebook", "ipython"]:
-        hfig = display(display_id=True)
-        fig_dir = None
-    else:
-        hfig = None
-        fig_dir = Path("training_log")
-        fig_dir.mkdir(exist_ok=True)
-        for filename in fig_dir.glob("*.png"):
-            filename.unlink()
-
-    fig, axs = plt.subplots(ncols=3, nrows=1, figsize=(3 * 5, 4))
-    ret = {"fig": fig, "axs": axs, "handler": hfig, "dir": fig_dir}
-
-    return ret
-
-
-def eval_func(itr, model, dataset, *, test_freq=10, device=None, fig=None, axs=None, hfig=None, fig_dir=None):
-    if itr % test_freq != 0:
-        return
-
-    model_name = model.name
-    save_name = f"{model_name}-itr-{itr}"
-    save_model(model, name=save_name)
-    if hfig is None and fig_dir is None:
-        return
-
-    with torch.no_grad():
-        visualize(model, dataset, axs, device=device)
-        if hfig is not None:
-            hfig.update(fig)
-        elif fig_dir is not None:
-            fig.savefig(fig_dir / f"itr-{itr:04d}.png")
-        else:
-            pass
 
 
 def get_one_hot(targets, nb_classes):
@@ -141,73 +88,6 @@ def batch_call(func, dataset, device=None, batch_size=100):
         rets[k] = merged
 
     return rets
-
-
-def visualize(model, dataset, axs, *, device=None, batch_size=100):
-    for ax in axs:
-        ax.clear()
-
-    ax1, ax2, ax3 = axs
-
-    batch = ndarray_to_tensor(dataset[:])
-    batch = dict_to_device(batch, device=device)
-    ret = batch_call(model.simulate, dataset, device, batch_size)
-
-    for k, v in batch.items():
-        batch[k] = v.detach().cpu()
-
-    for k, v in ret.items():
-        ret[k] = v.detach().cpu()
-
-    t = batch["t"]
-    x = batch["x"]
-
-    t_min, t_max = t.min(), t.max()
-    x_min, x_max = x.min(), x.max()
-
-    obs_t, obs_x, obs_mask = ret["obs_t"], ret["obs_x"], ret["obs_m"]
-    obs_x[obs_mask != 1] = np.nan
-    pred_y = ret["pred_y"]
-    pred_y_baseline = ret["pred_y_baseline"]
-
-    colors = plt.cm.tab10
-    _, _, x_dim = x.shape
-
-    (idx,) = np.where(dataset[:]["c"] == 1)
-    i = idx[0]
-    length = int(torch.sum(ret["mask"][i]).item())
-
-    for j in range(x_dim):
-        ax1.scatter(obs_t[i, :length], obs_x[i, :length, j], color=colors(j), marker="x")
-        ax1.plot(t[i], x[i, :, j], label=f"x{j+1}", color=colors(j))
-
-    ax1.set_xlim([t_min - 0.02, t_max + 0.02])
-    ax1.set_ylim([x_min - 0.02, x_max + 0.02])
-    ax1.legend()
-    ax1.set_title("Trajectory & Observation")
-
-    _, _, y_dim = batch["y"].shape
-    for j in range(y_dim):
-        ax2.plot(
-            obs_t[i, :length],
-            pred_y[i, :length, j],
-            color=colors(j),
-            label=f"p(y={j}|obs_x)",
-            linestyle="--",
-            drawstyle="steps-post",
-        )
-        ax2.plot(t[i], pred_y_baseline[i, :, j], color=colors(j), label=f"p(y={j}|x)", drawstyle="steps-post")
-    ax2.set_xlim([t_min - 0.02, t_max + 0.02])
-    ax2.set_ylim([-0.02, 1.02])
-    ax2.set_title("Mismatch in Outcome Estimation")
-    ax2.legend()
-
-    r_y = ret["r_y"][ret["mask"] == 1]
-    r_m = ret["r_m"][ret["mask"] == 1]
-    ax3.hist(r_y.numpy(), bins=20, density=False, color="blue", label="r_y")
-    ax3.hist(r_m.numpy(), bins=20, density=False, color="red", label="r_m")
-    ax3.legend()
-    ax3.set_title("Dist of r_y and r_m")
 
 
 def predictor_evaluation(model, dataset, batch_size=100, device=None, eval_mode=True):
@@ -318,12 +198,6 @@ def fit(
     else:
         test_loader = None
 
-    # handlers = create_io_handler()
-    # fig = handlers["fig"]
-    # axs = handlers["axs"]
-    # hfig = handlers["handler"]
-    # fig_dir = handlers["dir"]
-
     best_validation_loss = np.inf
     no_improvement_count = 0
     best_model = {}
@@ -331,7 +205,6 @@ def fit(
     with auto.trange(epochs, position=0) as tbar:
         for itr in tbar:
             if eval_func is not None:
-                # eval_func(itr, model, test_set, device=device, fig=fig, axs=axs, hfig=hfig, fig_dir=fig_dir)
                 eval_func(itr, model, test_set, device=device)
 
             if sampler is not None:
@@ -376,13 +249,6 @@ def sampler(itr, model, dataset, *, interval=100, **kwargs):
         return dataset, False
 
 
-# def eval_func(itr, model, test_set, interval=100):
-#     if itr % interval == 0:
-#         roc, prc = predictor_evaluation(test_set, model)
-#
-#         print(f"roc:{roc:.4f}, prc:{prc:.4f}")
-
-
 def adversarial_sampling(dataset, model, alpha=0.3, batch_size=100, device=None):
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
     # model = model.eval()
@@ -391,7 +257,6 @@ def adversarial_sampling(dataset, model, alpha=0.3, batch_size=100, device=None)
         for batch in loader:
             batch = dict_to_device(batch, device)
             ret = model.simulate(batch)
-            # q = ret["cost"].sum(dim=-1)
             q = torch.sum(ret["cost"] * ret["mask"], dim=-1)  # we need to exclude unrelated steps
             q_vals.append(q)
     q = torch.cat(q_vals, dim=0)

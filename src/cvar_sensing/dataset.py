@@ -2,6 +2,17 @@ import numpy as np
 import torch
 
 
+def split_data(dataset, test_split=0.2, seed=0, validation=False):
+    torch.random.manual_seed(seed)
+
+    train_set, test_set = torch.utils.data.random_split(dataset, [1 - test_split, test_split])
+    if validation:
+        train_set, valid_set = torch.utils.data.random_split(train_set, [1 - test_split, test_split])
+        return train_set, valid_set, test_set
+    else:
+        return train_set, test_set
+
+
 class Dataset(torch.utils.data.Dataset):
     def update_property(self, property, value):
         setattr(self, property, value)
