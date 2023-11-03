@@ -282,6 +282,7 @@ ttest = find_best_method(report, scores).rename(
         "roc": "ROC",
         "prc": "PRC",
         "cost": "Cost",
+        "delay(p>=0.1)": "d_{δ=0.1}",
         "delay(p>=0.3)": "d_{δ=0.3}",
         "delay(p>=0.5)": "d_{δ=0.5}",
         "delay(p>=0.7)": "d_{δ=0.7}",
