@@ -31,6 +31,6 @@ train_set, test_set = split_data(dataset, seed=best_seed)
 np.savez_compressed(asac_model_dir / "train_set", **train_set[:])
 np.savez_compressed(asac_model_dir / "test_set", **test_set[:])
 
-cmd = "bash ./exp_asac.sh"
+cmd = "bash ./exp_asac.sh".split(" ")
 proc = subprocess.Popen(cmd, cwd=asac_model_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 proc.wait()

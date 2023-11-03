@@ -48,7 +48,8 @@ script = "run_experiment.py"
 
 if len(available_gpus) >= 2:
     print("run experiments in parallel.")  # noqa
-    return_codes = [run_script(script, folder, available_gpus[i]).wait() for i, folder in enumerate(folders)]
+    procs = [run_script(script, folder, available_gpus[i]) for i, folder in enumerate(folders)]
+    exit_codes = [proc.wait() for proc in procs]
 else:
     print("run experiments sequentially.")  # noqa
     for folder in folders:

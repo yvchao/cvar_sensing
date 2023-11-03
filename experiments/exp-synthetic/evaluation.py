@@ -1,3 +1,4 @@
+import argparse
 import re
 from pathlib import Path
 
@@ -13,8 +14,12 @@ from cvar_sensing.sensing import Sensing
 from cvar_sensing.train import dict_to_device, load_model, ndarray_to_tensor
 from cvar_sensing.utils import evaluate, get_auc_scores, step_interp
 
+parser = argparse.ArgumentParser("Run evaluation")
+parser.add_argument("--gpu", type=int, default=0)
+args = parser.parse_args()
+
 # initialize device
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
+device = f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu"
 device = torch.device(device)
 
 # setup dirs

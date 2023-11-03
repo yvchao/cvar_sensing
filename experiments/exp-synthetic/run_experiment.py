@@ -28,7 +28,7 @@ def get_cmd(script: Path | str, gpu: int = 0, epochs: int = 200, parameters: dic
 
 print("Obtain the baseline predictor...")  # noqa
 # First find the best predictor.
-check_result = Path("./predictor/best_model_id")
+check_result = Path("./predictor/best_drop_rate")
 if check_result.exists():
     print("The baseline predictor is already obtained. Skip.")  # noqa: T201
 else:
@@ -97,18 +97,18 @@ for δ in delta_list:
 print("Evaluate ASAC...")  # noqa
 # Finally, we train the ASAC baseline.
 # Note that the result of the ASAC baseline is always random and we have no way to resovle this issue.
-cmd = f"conda run -n {venv} python ./exp_asac.py"
+cmd = f"conda run -n {venv} python ./exp_asac.py".split(" ")
 proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 proc.wait()
 
 print("Evaluate sensing deficiency...")  # noqa
 # Do a small ablation study
-cmd = f"conda run -n {venv} python ./exp_ablation.py"
+cmd = f"conda run -n {venv} python ./exp_ablation.py --gpu {gpu}".split(" ")
 proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 proc.wait()
 
 
 print("Perform benchmark...")  # noqa
-cmd = f"conda run -n {venv} python ./evaluation.py"
+cmd = f"conda run -n {venv} python ./evaluation.py --gpu {gpu}".split(" ")
 proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 proc.wait()

@@ -91,7 +91,7 @@ train_config["epochs"] = epochs
 
 record = pd.DataFrame(columns=["delta", "uuid"])
 
-for seed in range(5):
+for seed in range(3):
     model, model_id = fit_sensing(
         train_set,
         net_config,
