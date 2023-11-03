@@ -5,7 +5,7 @@ from pathlib import Path
 epochs = 200
 venv = "cvar_sensing"
 
-parser = argparse.ArgumentParser("Experiment on synthetic dataset")
+parser = argparse.ArgumentParser("Experiment on ADNI dataset")
 parser.add_argument("--gpu", type=int, default=0)
 args = parser.parse_args()
 gpu = args.gpu
@@ -43,7 +43,7 @@ else:
 
 print("Evaluate RAS...")  # noqa
 # Then we train the ras model.
-lambda_list = [200.0, 250.0, 280.0, 300.0, 310.0, 320.0, 350.0, 400.0]
+lambda_list = [200.0, 250.0, 300.0, 350.0, 400.0, 450.0]
 for λ in lambda_list:
     check_result = Path(f"./ras/lambda={λ}.csv")
     if check_result.exists():
@@ -61,7 +61,7 @@ for λ in lambda_list:
 
 print("Evaluate NLL...")  # noqa
 # Then we train the nll model.
-lambda_list = [100.0, 300.0]
+lambda_list = [200.0, 400.0]
 for λ in lambda_list:
     check_result = Path(f"./nll/lambda={λ}.csv")
     if check_result.exists():
@@ -78,7 +78,7 @@ for λ in lambda_list:
 
 print("Evaluate AS...")  # noqa
 # Then we train the baseline (AS) model.
-delta_list = [0.2, 0.5, 1.0]
+delta_list = [0.5, 1.5]
 for δ in delta_list:
     check_result = Path(f"./baseline/delta={δ}.csv")
     if check_result.exists():
@@ -98,12 +98,6 @@ print("Evaluate ASAC...")  # noqa
 # Finally, we train the ASAC baseline.
 # Note that the result of the ASAC baseline is always random and we have no way to resovle this issue.
 cmd = f"conda run -n {venv} python ./exp_asac.py"
-proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-proc.wait()
-
-print("Evaluate sensing deficiency...")  # noqa
-# Do a small ablation study
-cmd = f"conda run -n {venv} python ./exp_ablation.py"
 proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 proc.wait()
 

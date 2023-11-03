@@ -1,14 +1,20 @@
-# Risk-Averse Active Sensing for Timely Outcome Prediction under Cost Pressure* (NeurIPS 2023)
+# Risk-Averse Active Sensing for Timely Outcome Prediction under Cost Pressure (NeurIPS 2023)
 Source code for the continuous-time active sensing approach proposed in "Risk-Averse Active Sensing for Timely Outcome Prediction under Cost Pressure".
 
 ## Installation
-Detailed guides will be updated soon.
+This package can be installed by running the following command.
+```bash
+pip install "cvar_sensing @ git+https://github.com/yvchao/cvar_sensing.git"
+```
 
-## Examples
-Examples with the synthetic dataset will be added soon.
+## Experiments
+The experiments related code can be found in the folder "experiments"
+
+## Analysis
+Detailed analysis can be found in the folder of "reports"
 
 ## Citation
-If you find this work useful for your research, please kindly consider citing our papers.
+If you find this work useful for your research, please kindly consider citing our paper.
 ```bibtex
 @inproceedings{
 anonymous2023riskaverse,

@@ -4,14 +4,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from data_util import load_synthetic_data
+from data_util import load_adni_data
 from model_config import net_config, sim_config
 from tqdm import auto
 
 from cvar_sensing.dataset import split_data
 from cvar_sensing.sensing import Sensing
 from cvar_sensing.train import dict_to_device, load_model, ndarray_to_tensor
-from cvar_sensing.utils import evaluate, get_auc_scores, step_interp
+from cvar_sensing.utils import calculate_delay, evaluate, get_auc_scores
 
 # initialize device
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -21,7 +21,7 @@ device = torch.device(device)
 predictor_model_dir = Path("predictor")
 
 # load data
-dataset = load_synthetic_data()
+dataset = load_adni_data()
 net_config["x_dim"] = dataset.x_dim
 net_config["y_dim"] = dataset.y_dim
 
@@ -39,44 +39,14 @@ print(f"accuracy: roc={metric.roc:.4f}, prc={metric.prc:.4f}")  # noqa: T201
 train_set, test_set = split_data(dataset, seed=best_seed)
 
 # full observation
-sim_config["max_dt"] = 0.2
-sim_config["min_dt"] = 0.2
-
-
-def calculate_delay(batch, ret, threshold=0.3, label_index=1):
-    def find_where(a):
-        (indicies,) = torch.where(a)
-        if len(indicies) == 0:
-            return -1
-        else:
-            return indicies[0].item()
-
-    def batch_find_where(arr):
-        indicies = [find_where(a) for a in arr]
-        return np.array(indicies)
-
-    obs_t = ret["obs_t"]
-    pred_y = ret["pred_y"]
-    eval_t = torch.linspace(0, 3, 200)
-    x_max = 1.0
-    p = np.exp(-3 * np.square(x_max - batch["x"][:, :, 0]))  # ground truth
-    eval_p = np.stack([np.interp(eval_t.cpu(), batch["t"][i], p[i]) for i in range(len(p))])
-    eval_p = torch.from_numpy(eval_p)
-    pred_y_int = step_interp(eval_t, obs_t, pred_y)
-
-    indicies = batch_find_where(pred_y_int[:, :, label_index] >= threshold)
-    policy_detect_t = eval_t[indicies]
-    indicies = batch_find_where(eval_p[:, :] >= threshold)
-    oracle_detect_t = eval_t[indicies]
-    oracle_detect_t[indicies == -1] = np.nan
-    delay_t = policy_detect_t - oracle_detect_t
-    return delay_t
+sim_config["max_dt"] = 0.5
+sim_config["min_dt"] = 0.5
 
 
 def get_performance(test_set, model):
     stats = []
-    for seed in range(5):
-        metric = evaluate(test_set, model, device=device, seed=seed, delay_eval=calculate_delay)
+    for seed in range(3):
+        metric = evaluate(test_set, model, device=device, seed=seed)
         stats.append(metric)
     stats = pd.DataFrame(stats)
     return stats
@@ -96,8 +66,8 @@ metric = get_performance(test_set, model)
 metric.to_csv("fo_evaluation.csv")
 
 # restore the simulation settting.
-sim_config["min_dt"] = 0.2
-sim_config["max_dt"] = 1.0
+sim_config["min_dt"] = 0.5
+sim_config["max_dt"] = 1.5
 
 ras_model_dir = Path("ras")
 
@@ -177,7 +147,7 @@ predictor_model_dir = Path("predictor")
 
 def evaluate_asac_test(test_set, seed, lambda_):
     npz = np.load(f"asac/models/seed={seed},lambda={lambda_}.npz")
-    cost = np.array([1, 0.1, 1.0, 1.0])
+    cost = np.array([1, 1.0, 0.5, 0.5])
     ret = {}
     ret["obs_t"] = test_set[:]["t"]
     ret["obs_x"] = npz["testX"]
@@ -205,7 +175,7 @@ def evaluate_asac_test(test_set, seed, lambda_):
 
 dfs = []
 
-for seed in [0, 1, 2, 3, 4]:
+for seed in [0, 1, 2]:
     for lambda_ in [0.1, 0.01, 0.005, 0.001]:
         df = pd.DataFrame()
         m = "ASAC"
