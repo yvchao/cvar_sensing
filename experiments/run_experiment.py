@@ -28,28 +28,29 @@ def get_free_gpu_indices():
     return [i for i in range(total_gpu_num) if i not in gpu_ids_in_use]
 
 
-def run_script(script: Path | str, gpu: int = 0):
+def run_script(script: Path | str, cwd: Path | str, gpu: int = 0):
     script = Path(script)
     cmd = f"conda run -n {venv} python".split(" ") + [
         script.as_posix(),
         "--gpu",
         f"{gpu}",
     ]
-    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return proc
 
 
 available_gpus = get_free_gpu_indices()
-scripts = [
-    "./exp-synthetic/run_experiment.py",
-    "./exp-adni/run_experiment.py",
+folders = [
+    "./exp-synthetic",
+    "./exp-adni",
 ]
+script = "run_experiment.py"
 
 if len(available_gpus) >= 2:
     print("run experiments in parallel.")  # noqa
-    return_codes = [run_script(script, available_gpus[i]).wait() for i, script in enumerate(scripts)]
+    return_codes = [run_script(script, folder, available_gpus[i]).wait() for i, folder in enumerate(folders)]
 else:
     print("run experiments sequentially.")  # noqa
-    for script in scripts:
-        proc = run_script(script)
+    for folder in folders:
+        proc = run_script(script, folder)
         proc.wait()

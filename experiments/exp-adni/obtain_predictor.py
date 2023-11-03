@@ -6,9 +6,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from data_util import load_adni_data, split_data
+from data_util import load_adni_data
 from model_config import net_config, train_config
 
+from cvar_sensing.dataset import split_data
 from cvar_sensing.predictor import Predictor, take_from_sequence
 from cvar_sensing.train import (
     batch_call,
@@ -29,6 +30,8 @@ device = f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu"
 device = torch.device(device)
 epochs = args.epochs
 
+train_config["epochs"] = epochs
+
 # setup dirs
 predictor_model_dir = Path("predictor")
 
@@ -48,7 +51,6 @@ def fit_predictor(dataset, net_config, model_dir=Path("predictor"), seed=0):
         loss_weights,
         test_set=valid_set,
         test_metric="bce",
-        epochs=epochs,
         tolerance=7,
         device=device,
         **train_config,
