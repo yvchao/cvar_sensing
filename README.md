@@ -7,11 +7,14 @@ This package can be installed by running the following command.
 pip install "cvar_sensing @ git+https://github.com/yvchao/cvar_sensing.git"
 ```
 
+## Examples
+TBD.
+
 ## Experiments
 The experiments related code can be found in the folder "experiments"
 
 ## Analysis
-Detailed analysis can be found in the folder of "reports"
+A summary of the experiment can be found under folder "reports"
 
 ## Citation
 If you find this work useful for your research, please kindly consider citing our paper.

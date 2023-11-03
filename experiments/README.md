@@ -30,4 +30,4 @@ python ./run_experiment.py
 ```
 
 ## Check the results
-The experimental results can be examined in the "reports" folder under the root directory of this repo.
+The experimental results can be examined in the "reports" folder under the project root directory.

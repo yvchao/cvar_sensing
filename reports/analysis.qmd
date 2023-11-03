@@ -50,7 +50,7 @@ scores = ["roc", "prc", "cost", "delay(p>=0.3)", "delay(p>=0.5)", "delay(p>=0.7)
 
 For each method, we select the hyperparameter based on their *cost efficiency*, i.e., the achieved accuracy (PRC) per unit acquisition cost.
 We ignore the sensing policies that made no observation (cost = 0).
-The benchmark result of RAS agains baselines are shown as follows.
+The benchmark result of RAS against baselines are shown as follows.
 
 ```{python}
 # | echo: fenced
@@ -97,7 +97,7 @@ result = report[["method", "params"] + scores].rename(
 print(result.to_markdown()) # noqa
 ```
 
-In the following table, we mark the location of the best performance in each column and evalute the $p$-values by performance t-test against the rest methods.
+In the following table, we mark the location of the best performance in each column and evaluate the $p$-values by performance t-test against the rest methods.
 ```{python}
 # | echo: false
 def text_to_mean(val):
@@ -168,8 +168,8 @@ ttest = find_best_method(report, scores).rename(
 print(ttest.to_markdown()) # noqa
 ```
 
-Below, we propose one optional criterion to find the best method by considering both acquisition cost and diagnositic accuracy.
-We consider the FO baseline with dense sensing histories as a reference, and find the optimal sensing history that achieves the largest acquisition cost reduction while maintaining a reasonable accuracy. Our criterion is defiend as follows for each method (except for the FO baseline).
+Below, we propose one optional criterion to find the best method by considering both acquisition cost and diagnosis accuracy.
+We consider the FO baseline with dense sensing histories as a reference, and find the optimal sensing history that achieves the largest acquisition cost reduction while maintaining a reasonable accuracy. Our criterion is defined as follows for each method (except for the FO baseline).
 
 $$
 \frac{\max (0, PRC_{FO} - PRC)}{Cost_{FO} - Cost},
@@ -386,7 +386,7 @@ Benefitted from the risk-averse training strategy, most sensing policies obtaine
 ### Improvement of the sensing deficiency distribution
 To illustrate the effectiveness of our risk-averse active sensing approach, we compare the empirical distribution of sensing deficiency $Q^π(X)$ of RAS with the ablations of risk-neutral sensing ($α = 1.0$) and AS baseline ($α = 1.0$, constant acquisition interval $∆ = 1.0$) on the synthetic dataset.
 All three models are trained with the same trade-off coefficient $λ = 300$.
-As illustrated in @fig-sensing-deficiency, RAS is able to effectively optimize the sensing performance for trajectories in the long tail of sensing deficency distribution and reduces the upper $α$-quantile of $Q^π(X)$ to $ρ_{α=0.1} = 10.40$.
+As illustrated in @fig-sensing-deficiency, RAS is able to effectively optimize the sensing performance for trajectories in the long tail of sensing deficiency distribution and reduces the upper $α$-quantile of $Q^π(X)$ to $ρ_{α=0.1} = 10.40$.
 Factor α = 1.0 completely disables the risk-aversion training strategy in RAS.
 Thereby, a clear increase of sensing deficiency (quantile $ρ_{α=0.1}$ grows from 10.40 to 20.01) is observed with the risk-neutral ablation of RAS.
 Similarly, without adaptive scheduling of acquisition intervals and risk-averse optimization strategies, the AS baseline illustrates the failure of conventional active sensing paradigms at the long tail of $Q^π(X)$ distribution.

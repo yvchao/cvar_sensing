@@ -1,10 +1,18 @@
 # Analysis of the experiment results
 
-This folder provides a concise summary of the experimental results in "analysis.md".
-The content in that file can be reproduced by running `quarto render .` under this directory.
-Quarto can be installed with Conda by running the following command.
+A concise summary of the experimental results is provided in "analysis.md".
+The content in that file can be reproduced by following the instructions below.
 ```bash
+# move to the "experiments" folder
+cd ../experiments
+
+# run the experiments
 conda activate cvar_sensing
+python run_experiment.py
+
+# install the quarto-cli tool
 conda install -c conda-forge quarto
-```
-Here, we assume this package is installed in a virtual environment named "cvar_sensing".
+
+# reproduce the experiment summary
+quarto render .
+``

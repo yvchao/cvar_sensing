@@ -7,7 +7,7 @@
 For each method, we select the hyperparameter based on their *cost
 efficiency*, i.e., the achieved accuracy (PRC) per unit acquisition
 cost. We ignore the sensing policies that made no observation (cost =
-0). The benchmark result of RAS agains baselines are shown as follows.
+0). The benchmark result of RAS against baselines are shown as follows.
 
 <details>
 <summary>Benchmark evaluation on the synthetic dataset.</summary>
@@ -69,8 +69,8 @@ print(result.to_markdown()) # noqa
 |  13 | RAS    | λ=300.0 | 0.680±0.003 | 0.647±0.006 | 6.077±0.953  | 0.325±0.084 | 0.264±0.086 | 0.246±0.071 |
 
 In the following table, we mark the location of the best performance in
-each column and evalute the $p$-values by performance t-test against the
-rest methods.
+each column and evaluate the $p$-values by performance t-test against
+the rest methods.
 
 |     | Method | ROC   | PRC   | Cost  | d\_{δ=0.3} | d\_{δ=0.5} | d\_{δ=0.7} |
 |----:|:-------|:------|:------|:------|:-----------|:-----------|:-----------|
@@ -81,11 +81,11 @@ rest methods.
 |  13 | RAS    | 1.000 | 0.000 | 0.000 | best       | best       | best       |
 
 Below, we propose one optional criterion to find the best method by
-considering both acquisition cost and diagnositic accuracy. We consider
+considering both acquisition cost and diagnosis accuracy. We consider
 the FO baseline with dense sensing histories as a reference, and find
 the optimal sensing history that achieves the largest acquisition cost
 reduction while maintaining a reasonable accuracy. Our criterion is
-defiend as follows for each method (except for the FO baseline).
+defined as follows for each method (except for the FO baseline).
 
 $$
 \frac{\max (0, PRC_{FO} - PRC)}{Cost_{FO} - Cost},
@@ -184,8 +184,8 @@ the synthetic dataset. All three models are trained with the same
 trade-off coefficient $λ = 300$. As illustrated in
 [Figure 2](#fig-sensing-deficiency), RAS is able to effectively optimize
 the sensing performance for trajectories in the long tail of sensing
-deficency distribution and reduces the upper $α$-quantile of $Q^π(X)$ to
-$ρ_{α=0.1} = 10.40$. Factor α = 1.0 completely disables the
+deficiency distribution and reduces the upper $α$-quantile of $Q^π(X)$
+to $ρ_{α=0.1} = 10.40$. Factor α = 1.0 completely disables the
 risk-aversion training strategy in RAS. Thereby, a clear increase of
 sensing deficiency (quantile $ρ_{α=0.1}$ grows from 10.40 to 20.01) is
 observed with the risk-neutral ablation of RAS. Similarly, without
