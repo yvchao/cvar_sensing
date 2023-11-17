@@ -28,6 +28,8 @@ All experiments will be conducted by running the script of "./run_experiment.py"
 conda activate cvar_sensing
 python ./run_experiment.py
 ```
+> [!NOTE]
+> ASAC relies on an older version of TensorFlow. The results from the ASAC baseline are unstable even with the same random seeds. Currently we find no treat for this issue.
 
 ## Check the results
-The experimental results can be examined in the "reports" folder under the project root directory.
+Analysis of the experimental results can be generated and examined with files in the [reports](../reports) folder.
