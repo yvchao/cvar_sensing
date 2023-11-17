@@ -10,7 +10,7 @@ A desirable sensing strategy shall actively collect diagnosis-related informatio
 <img src="./assets/trade-off.png" alt="Trade-off between accuracy and cost" style="class: center; width:30%; background-color:white;"/>
 </p>
 
-However, there are two practical challenges that confound existing active sensing approaches
+However, there are two practical challenges that confound existing active sensing approaches.
 
 ### Adaptive follow-up intervals
 Measurements of patient covariates only happen at discrete follow-ups. The active sensing policy needs to adaptively adjust the follow-up intervals for patients at different disease stages.
@@ -37,7 +37,7 @@ RAS factorizes the sensing policy into two orthogonal policies $\pi=(\pi_m,\pi_\
 We formulate the considered active sensing task into a risk-averse optimization problem based on the notion of conditional value-at-risk (CVaR) and search for optimal sensing strategies that reduce sensing failures at the long tail illustrated in Figure 1.
 
 Specifically, RAS seeks to solve the problem of
-$`\min_{\pi} \mathrm{CVaR}_\alpha \triangleq \mathbb{E}_{\mathbf{X}\in S^\pi_\alpha} [Q^\pi(\mathbf{X})],`$
+$`\min_{\pi} \mathrm{CVaR}_\alpha \triangleq \mathbb{E}_{\mathbf{X}\in S^\pi_\alpha} [Q^\pi(\mathbf{X})]`$.
 
 - Factor $\alpha$ is used to identify patients with sensing deficiency scores $Q^\pi(\mathbf{X})$ above the upper $\alpha$-quantile $\rho_\alpha$ of the population.
 - Sensing deficiency $Q^\pi(\mathbf{X})$ is the weighted sum of diagnosis error and acquisition cost in the sensing process for patient $\mathbf{X}$.
@@ -58,7 +58,7 @@ pip install "cvar_sensing @ git+https://github.com/yvchao/cvar_sensing.git"
 ```
 
 ## Experiments
-The experiments related code can be found in folder [*experiments*](./experiments).
+The experiments related code can be found in folder [experiments](./experiments).
 A summary of the experimental results can be found in [reports/analysis.md](./reports/analysis.md)
 
 ## Citation
