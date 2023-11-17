@@ -41,7 +41,7 @@ $`\min_{\pi} \mathrm{CVaR}_\alpha \triangleq \mathbb{E}_{\mathbf{X}\in S^\pi_\al
 
 - Factor $\alpha$ is used to identify patients with sensing deficiency scores $Q^\pi(\mathbf{X})$ above the upper $\alpha$-quantile $\rho_\alpha$ of the population.
 - Sensing deficiency $Q^\pi(\mathbf{X})$ is the weighted sum of diagnosis error and acquisition cost in the sensing process for patient $\mathbf{X}$.
-- Subset $S^\pi_\alpha = \{\mathbf{X}| Q^\pi(\mathbf{X}) \geq \rho_\alpha\}$ collects patients that suffer from the sensing failures at the long tail.
+- Subset $`S^\pi_\alpha = \{\mathbf{X}| Q^\pi(\mathbf{X}) \geq \rho_\alpha\}`$ collects patients that suffer from the sensing failures at the long tail.
 
 ### The effectiveness of risk-aversion
 We demonstrate with experiments that the risk-averse policy learned by RAS can find appropriate trade-offs (knee points of the Pareto front) between diagnosis accuracy and acquisition cost by effectively reducing the tail size (as reflected in $\rho_\alpha$) of sensing deficiency $Q^\pi(\mathbf{X})$ distribution.
