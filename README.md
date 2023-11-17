@@ -35,9 +35,9 @@ RAS factorizes the sensing policy into two orthogonal policies $\pi=(\pi_m,\pi_\
 
 
 We formulate the considered active sensing task into a risk-averse optimization problem based on the notion of conditional value-at-risk (CVaR) and search for optimal sensing strategies that reduce sensing failures at the long tail illustrated in Figure 1.
-$$
-\min_{\pi} \text{CVaR}_\alpha \triangleq \mathbb{E}_{\mathbf{X}\in S^\pi_\alpha} [Q^\pi(\mathbf{X})],
-$$
+$$`
+\min_{\pi} \mathrm{CVaR}_\alpha \triangleq \mathbb{E}_{\mathbf{X}\in S^\pi_\alpha} [Q^\pi(\mathbf{X})],
+`$$
 
 - Factor $\alpha$ is used to identify patients with sensing deficiency scores $Q^\pi(\mathbf{X})$ above the upper $\alpha$-quantile $\rho_\alpha$ of the population.
 - Sensing deficiency $Q^\pi(\mathbf{X})$ is the weighted sum of diagnosis error and acquisition cost in the sensing process for patient $\mathbf{X}$.
