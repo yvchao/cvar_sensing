@@ -1,7 +1,11 @@
 import subprocess
+import sys
 from pathlib import Path
 
-venv = "cvar_sensing"
+# Add repo root to PYTHONPATH to ensuer we can access experiments module:
+sys.path.append((Path(__file__).parent.parent).as_posix())
+
+from experiments.exp_config import conda_path, venv
 
 
 def get_free_gpu_indices():
@@ -30,12 +34,18 @@ def get_free_gpu_indices():
 
 def run_script(script: Path | str, cwd: Path | str, gpu: int = 0):
     script = Path(script)
-    cmd = f"conda run -n {venv} python".split(" ") + [
+    cmd = f"{conda_path} run -n {venv} python".split(" ") + [
         script.as_posix(),
         "--gpu",
         f"{gpu}",
     ]
-    proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    log_file = cwd / Path(f"{script.stem}.log")
+    log_file.touch(exist_ok=True)
+    print(f"Running command: {' '.join(cmd)}")
+    print(f"In working directory: {cwd}")
+    print(f"Output logged to: {log_file}")
+    with open(log_file, "w") as f:
+        proc = subprocess.Popen(cmd, cwd=cwd, stdout=f, stderr=f)
     return proc
 
 
