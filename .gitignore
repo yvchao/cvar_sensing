@@ -56,8 +56,18 @@ MANIFEST
 
 # Custom
 experiments/exp-adni/data_with_orig.npz
-experiments/exp-synthetic/predictor
-experiments/exp-synthetic/ras
 experiments/exp-adni/predictor
 experiments/exp-adni/ras
+experiments/exp-adni/rns
+experiments/exp-adni/nll
+experiments/exp-adni/baseline
+experiments/exp-adni/asac/*.npz
+experiments/exp-adni/asac/models
+experiments/exp-synthetic/predictor
+experiments/exp-synthetic/ras
+experiments/exp-synthetic/rns
+experiments/exp-synthetic/nll
+experiments/exp-synthetic/baseline
+experiments/exp-synthetic/asac/*.npz
+experiments/exp-synthetic/asac/models
 .dev
