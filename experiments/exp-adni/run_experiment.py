@@ -1,29 +1,17 @@
 import argparse
-import subprocess
+import sys
 from pathlib import Path
 
-epochs = 200
-venv = "cvar_sensing"
+# Add repo root to PYTHONPATH to ensuer we can access experiments module:
+sys.path.append((Path(__file__).parent.parent.parent).as_posix())
+
+from experiments.exp_config import conda_path, epochs, venv, venv_asac
+from experiments.exp_helper import get_cmd, run_script
 
 parser = argparse.ArgumentParser("Experiment on ADNI dataset")
 parser.add_argument("--gpu", type=int, default=0)
 args = parser.parse_args()
 gpu = args.gpu
-
-
-def get_cmd(script: Path | str, gpu: int = 0, epochs: int = 200, parameters: dict[str, int | float] = {}):
-    script = Path(script)
-    cmd = f"conda run -n {venv} python".split(" ") + [
-        script.as_posix(),
-        "--gpu",
-        f"{gpu}",
-        "--epochs",
-        f"{epochs}",
-    ]
-    for k, v in parameters.items():
-        cmd += [f"--{k}", f"{v}"]
-
-    return cmd
 
 
 print("Obtain the baseline predictor...")  # noqa
@@ -33,8 +21,8 @@ if check_result.exists():
     print("The baseline predictor is already obtained. Skip.")  # noqa: T201
 else:
     # Epochs can be set to 100 since we do early stopping and the training stops soon.
-    cmd = get_cmd("./obtain_predictor.py", gpu=gpu, epochs=100)
-    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    cmd = get_cmd("./obtain_predictor.py", venv=venv, gpu=gpu, epochs=100)
+    proc = run_script(cmd, "exp-adni")
     proc.wait()
     # The results should be written to Path("predictor")
     if not check_result.exists():
@@ -51,8 +39,8 @@ for λ in lambda_list:
         continue
 
     param = {"coeff": λ}
-    cmd = get_cmd("./exp_ras.py", gpu=gpu, epochs=epochs, parameters=param)
-    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    cmd = get_cmd("./exp_ras.py", venv=venv, gpu=gpu, epochs=epochs, parameters=param)
+    proc = run_script(cmd, "exp-adni")
     proc.wait()
 
     if not check_result.exists():
@@ -69,8 +57,8 @@ for λ in lambda_list:
         continue
 
     param = {"coeff": λ}
-    cmd = get_cmd("./exp_nll.py", gpu=gpu, epochs=epochs, parameters=param)
-    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    cmd = get_cmd("./exp_nll.py", venv=venv, gpu=gpu, epochs=epochs, parameters=param)
+    proc = run_script(cmd, "exp-adni")
     proc.wait()
 
     if not check_result.exists():
@@ -86,8 +74,8 @@ for δ in delta_list:
         continue
 
     param = {"delta": δ}
-    cmd = get_cmd("./exp_baseline.py", gpu=gpu, epochs=epochs, parameters=param)
-    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    cmd = get_cmd("./exp_baseline.py", venv=venv, gpu=gpu, epochs=epochs, parameters=param)
+    proc = run_script(cmd, "exp-adni")
     proc.wait()
 
     if not check_result.exists():
@@ -97,12 +85,12 @@ for δ in delta_list:
 print("Evaluate ASAC...")  # noqa
 # Finally, we train the ASAC baseline.
 # Note that the result of the ASAC baseline is always random and we have no way to resovle this issue.
-cmd = f"conda run -n {venv} python ./exp_asac.py".split(" ")
-proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+cmd = get_cmd("./exp_asac.py", venv=venv_asac, gpu=None, epochs=None)
+proc = run_script(cmd, "exp-adni")
 proc.wait()
 
 
 print("Perform benchmark...")  # noqa
-cmd = f"conda run -n {venv} python ./evaluation.py --gpu {gpu}".split(" ")
-proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+cmd = get_cmd("./evaluation.py", venv=venv, gpu=gpu, epochs=None)
+proc = run_script(cmd, "exp-adni")
 proc.wait()

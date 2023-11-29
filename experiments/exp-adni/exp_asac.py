@@ -1,4 +1,6 @@
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -6,6 +8,12 @@ import pandas as pd
 from data_util import load_adni_data
 
 from cvar_sensing.dataset import split_data
+
+# Add repo root to PYTHONPATH to ensuer we can access experiments module:
+path = os.path.realpath(os.path.realpath(Path(__file__).parent.as_posix()) + "../../..")
+sys.path.append(path)
+
+from experiments.exp_config import conda_path, venv_asac
 
 # setup dirs
 predictor_model_dir = Path("predictor")
@@ -31,6 +39,8 @@ train_set, test_set = split_data(dataset, seed=best_seed)
 np.savez_compressed(asac_model_dir / "train_set", **train_set[:])
 np.savez_compressed(asac_model_dir / "test_set", **test_set[:])
 
-cmd = "bash ./exp_asac.sh".split(" ")
-proc = subprocess.Popen(cmd, cwd=asac_model_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-proc.wait()
+cmd = f"bash ./exp_asac.sh {conda_path} {venv_asac}".split(" ")
+log_path = asac_model_dir / "exp_asac_sh.log"
+with open(log_path, "w") as f:
+    proc = subprocess.Popen(cmd, cwd=asac_model_dir, stdout=f, stderr=f)
+    proc.wait()
