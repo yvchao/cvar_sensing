@@ -6,7 +6,7 @@ venv_asac = "asac_sensing"
 
 # Set this to `None` to use default `conda` command location,
 # or specify the path to the `conda` command:
-_conda_path = None
+_conda_path = None  # Or a path, e.g.: "/home/azureuser/miniconda/bin/conda"
 
 # Default epochs:
 epochs = 200
