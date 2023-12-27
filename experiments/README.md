@@ -13,6 +13,8 @@ For most of the experiments, we use the first environment.
 ```bash
 conda activate cvar_sensing
 pip install "cvar_sensing[benchmarks] @ git+https://github.com/yvchao/cvar_sensing.git"
+# OR if you have the repository cloned locally, from inside the repository directory run:
+pip install .[benchmarks]
 ```
 
 The baseline of [ASAC](https://github.com/vanderschaarlab/mlforhealthlabpub/tree/main/alg/asac) requires TensorFlow 1.5.
@@ -20,12 +22,22 @@ We install its dependencies in a separate environment.
 ```bash
 conda activate asac_sensing
 pip install "cvar_sensing[asac] @ git+https://github.com/yvchao/cvar_sensing.git"
+# OR if you have the repository cloned locally, from inside the repository directory run:
+pip install .[benchmarks]
 ```
+
+## Check experiment configs
+Open [exp_config.py](./exp_config.py) and update the values for
+* `venv`
+* `venv_asac`
+* `_conda_path`
+
+if necessary.
 
 ## Run the experiment
 All experiments will be conducted by running the script of "./run_experiment.py".
 ```bash
-conda activate cvar_sensing
+conda activate base
 python ./run_experiment.py
 ```
 > [!NOTE]

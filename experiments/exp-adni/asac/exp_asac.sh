@@ -1,11 +1,9 @@
-eval "$(conda shell.bash hook)"
-conda activate asac_sensing
+conda_path="$1"
+conda_env="$2"
 
 niters=200
 test_split=0.2
 
-python asac_baseline.py --niters=$niters --test-split=$test_split --seed=0
-python asac_baseline.py --niters=$niters --test-split=$test_split --seed=1
-python asac_baseline.py --niters=$niters --test-split=$test_split --seed=2
-
-conda deactivate
+$conda_path run -n $conda_env python asac_baseline.py --niters=$niters --test-split=$test_split --seed=0
+$conda_path run -n $conda_env python asac_baseline.py --niters=$niters --test-split=$test_split --seed=1
+$conda_path run -n $conda_env python asac_baseline.py --niters=$niters --test-split=$test_split --seed=2

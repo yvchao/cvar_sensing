@@ -12,7 +12,7 @@ from tqdm import auto
 from cvar_sensing.dataset import split_data
 from cvar_sensing.sensing import Sensing
 from cvar_sensing.train import dict_to_device, load_model, ndarray_to_tensor
-from cvar_sensing.utils import calculate_delay, evaluate, get_auc_scores
+from cvar_sensing.utils import evaluate, get_auc_scores, step_interp
 
 parser = argparse.ArgumentParser("Run evaluation")
 parser.add_argument("--gpu", type=int, default=0)
@@ -46,6 +46,36 @@ train_set, test_set = split_data(dataset, seed=best_seed)
 # full observation
 sim_config["max_dt"] = 0.5
 sim_config["min_dt"] = 0.5
+
+
+def calculate_delay(batch, ret, threshold=0.3, label_index=1):
+    def find_where(a):
+        (indicies,) = torch.where(a)
+        if len(indicies) == 0:
+            return -1
+        else:
+            return indicies[0].item()
+
+    def batch_find_where(arr):
+        indicies = [find_where(a) for a in arr]
+        return np.array(indicies)
+
+    obs_t = ret["obs_t"]
+    pred_y = ret["pred_y"]
+    eval_t = torch.linspace(0, 3, 200)
+    x_max = 1.0
+    p = np.exp(-3 * np.square(x_max - batch["x"][:, :, 0]))  # ground truth
+    eval_p = np.stack([np.interp(eval_t.cpu(), batch["t"][i], p[i]) for i in range(len(p))])
+    eval_p = torch.from_numpy(eval_p)
+    pred_y_int = step_interp(eval_t, obs_t, pred_y)
+
+    indicies = batch_find_where(pred_y_int[:, :, label_index] >= threshold)
+    policy_detect_t = eval_t[indicies]
+    indicies = batch_find_where(eval_p[:, :] >= threshold)
+    oracle_detect_t = eval_t[indicies]
+    oracle_detect_t[indicies == -1] = np.nan
+    delay_t = policy_detect_t - oracle_detect_t
+    return delay_t
 
 
 def get_performance(test_set, model):
