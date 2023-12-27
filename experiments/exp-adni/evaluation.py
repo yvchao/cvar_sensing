@@ -11,7 +11,7 @@ from tqdm import auto
 
 from cvar_sensing.dataset import split_data
 from cvar_sensing.sensing import Sensing
-from cvar_sensing.train import dict_to_device, load_model, ndarray_to_tensor
+from cvar_sensing.train import batch_call, dict_to_device, load_model, ndarray_to_tensor
 from cvar_sensing.utils import calculate_delay, evaluate, get_auc_scores
 
 parser = argparse.ArgumentParser("Run evaluation")
@@ -161,6 +161,20 @@ def evaluate_asac_test(test_set, seed, lambda_):
     ret["obs_m"] = npz["testG_hat"]
     ret["r_m"] = ret["obs_m"] @ cost
     ret["mask"] = test_set[:]["mask"]
+
+    # obtain the baseline outcome prediction from the full-observation (FO) model
+    local_sim_config = sim_config.copy()
+    local_sim_config["max_dt"] = 0.5
+    local_sim_config["min_dt"] = 0.5
+    fo_model = get_fo_model(predictor_model_dir / f"Predictor_{predictor_idx}.pt", net_config, local_sim_config)
+    torch.random.manual_seed(seed)
+    fo_model.train()
+
+    with torch.no_grad():
+        fo_ret = batch_call(fo_model.simulate, test_set, device=device)
+
+    # insert the baseline prediciton to ret dictionary
+    ret["pred_y_baseline"] = fo_ret["pred_y_baseline"]
     ret = ndarray_to_tensor(ret)
 
     roc, prc = get_auc_scores(test_set, ret)
