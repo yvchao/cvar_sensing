@@ -48,7 +48,7 @@ sim_config["max_dt"] = 0.2
 sim_config["min_dt"] = 0.2
 
 
-def calculate_delay(batch, ret, threshold=0.3, label_index=1):
+def calculate_delay_oracle(batch, ret, threshold=0.3, label_index=1):
     def find_where(a):
         (indicies,) = torch.where(a)
         if len(indicies) == 0:
@@ -81,7 +81,7 @@ def calculate_delay(batch, ret, threshold=0.3, label_index=1):
 def get_performance(test_set, model):
     stats = []
     for seed in range(5):
-        metric = evaluate(test_set, model, device=device, seed=seed, delay_eval=calculate_delay)
+        metric = evaluate(test_set, model, device=device, seed=seed, delay_eval=calculate_delay_oracle)
         stats.append(metric)
     stats = pd.DataFrame(stats)
     return stats
@@ -202,7 +202,7 @@ def evaluate_asac_test(test_set, seed, lambda_):
 
     delays = {}
     for threshold in [0.1, 0.3, 0.5, 0.7]:
-        ds = calculate_delay(test_set[:], ret, threshold=threshold, label_index=1)
+        ds = calculate_delay_oracle(test_set[:], ret, threshold=threshold, label_index=1)
         delays[f"delay(p>={threshold})"] = np.nanmean(np.abs(ds)).item()
 
     return roc, prc, cost, delays
